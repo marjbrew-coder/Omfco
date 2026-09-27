@@ -6,7 +6,6 @@
   <title>OMFC Leaderboard</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- CRITICAL FIX: Alpine Plugins MUST be loaded before Alpine Core -->
   <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/collapse@3.x.x/dist/cdn.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -18,7 +17,7 @@
     <div class="max-w-md mx-auto flex justify-between items-center">
       <div>
         <h1 class="text-xl font-black tracking-tight text-amber-400">OLD MENS FITNESS CLUB</h1>
-        <p class="text-xs text-slate-400">July 2026 Standings</p>
+        <p class="text-xs text-slate-400" x-text="currentMonthLabel + ' Standings'"></p>
       </div>
       <button @click="fetchData()" class="p-2 text-slate-400 hover:text-white transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.253 8H18" /></svg>
@@ -27,33 +26,10 @@
   </header>
 
   <main class="max-w-md mx-auto p-4 space-y-6">
-
-    <!-- WhatsApp Share Success Notification Banner -->
-    <div x-show="showShareBanner" 
-         x-transition:enter="transition ease-out duration-300"
-         x-transition:enter-start="opacity-0 scale-95"
-         x-transition:enter-end="opacity-100 scale-100"
-         x-transition:leave="transition ease-in duration-200"
-         x-transition:leave-start="opacity-100 scale-100"
-         x-transition:leave-end="opacity-0 scale-95"
-         class="bg-emerald-950 border border-emerald-500/40 rounded-2xl p-4 shadow-xl space-y-3">
-      <div class="flex justify-between items-start">
-        <div class="flex items-center space-x-2">
-          <span class="text-xl">🎉</span>
-          <h3 class="font-bold text-emerald-400 text-sm">Workout Logged Successfully!</h3>
-        </div>
-        <button @click="showShareBanner = false" class="text-slate-400 hover:text-white text-xs font-bold px-1">✕</button>
-      </div>
-      <p class="text-xs text-slate-300">Let the rest of the crew know your new standings score on WhatsApp.</p>
-      <a :href="'https://api.whatsapp.com/send?text=' + shareText" 
-         target="_blank"
-         class="inline-flex w-full items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-lg shadow-emerald-900/30 space-x-2">
-        <span>💬 Share to WhatsApp</span>
-      </a>
-    </div>
     
+    <!-- Active Month Leaderboard -->
     <section class="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700">
-      <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3">🏆 Leaderboard</h2>
+      <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3" x-text="'🏆 ' + currentMonthLabel + ' Leaderboard'"></h2>
       <div class="space-y-2">
         <template x-for="(score, index) in leaderboard" :key="score.name">
           <div class="flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
@@ -72,7 +48,8 @@
       </div>
     </section>
 
-    <section class="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700" x-data="{ open: false }">
+    <!-- Workout Logging Form -->
+    <section class="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700" x-data="{ open: true }">
       <button @click="open = !open" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl flex justify-between items-center transition shadow-lg shadow-amber-500/10">
         <span x-text="open ? 'Close Log Form' : '＋ Log New Workout'"></span>
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-200" :class="open ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -82,6 +59,7 @@
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Athlete</label>
           <select x-model="form.athlete" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 focus:outline-none focus:border-amber-400 text-slate-200">
+            <option value="">-- Select Athlete --</option>
             <template x-for="name in athletes" :key="name">
               <option :value="name" x-text="name" :selected="form.athlete === name"></option>
             </template>
@@ -91,8 +69,10 @@
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Activity Type</label>
           <select x-model="form.type" @change="resetInputs" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 focus:outline-none focus:border-amber-400 text-slate-200">
-            <option value="run_row">🏃‍♂️ Running / Rowing (1km = 1.5pt)</option>
-            <option value="swim">🏊‍♂️ Swimming (1km = 5pt)</option>
+            <option value="run">🏃‍♂️ Running (1km = 1.5pt)</option>
+            <option value="row">🚣‍♀️ Rowing (1km = 1.5pt)</option>
+            <option value="ascent">🧗‍♂️ Ascent (100m = 1pt)</option>
+            <option value="swim">🏊‍♂️ Swimming (250m = 2pt)</option>
             <option value="cycling">🚴‍♂️ Cycling (5km = 1.5pt)</option>
             <option value="ebike">⚡ E-biking (5km = 1pt)</option>
             <option value="stepper">🪜 Stepper (20 floors = 1.5pt)</option>
@@ -100,46 +80,110 @@
             <option value="sports">🎾 Approved Sports (Squash, Tennis, Football) (10m = 2pt)</option>
             <option value="yoga">🧘 Yoga / Stretch (10m = 1pt)</option>
             <option value="sauna">🥵 Sauna (10m = 1pt, max 6/wk)</option>
-            <option value="climbing">🧗 Climbing (Routes & Hangboard)</option>
+            <option value="climbing_routes">🧗 Climbing (Easy/Hard/Limit Routes)</option>
+            <option value="hangboard">🛹 Hangboard Training (3m = 1pt)</option>
             <option value="bonus">⭐ Individual Monthly Objective (+40)</option>
+            <option value="custom">✨ Custom Activity (Manual Points)</option>
           </select>
         </div>
 
         <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 space-y-3">
           
-          <div x-show="['run_row', 'swim', 'cycling', 'ebike'].includes(form.type)">
-            <label class="block text-xs text-slate-400 mb-1">Distance (KM) <span class="text-amber-500/80 text-[10px] lowercase">(Rounds down to full KM)</span></label>
+          <!-- Custom Activity Inputs -->
+          <div x-show="form.type === 'custom'" class="space-y-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Activity Name (e.g., 'Spikeball', 'Kayaking')</label>
+              <input type="text" x-model="form.custom_name" placeholder="Enter activity label..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Points to Award</label>
+              <input type="number" step="0.1" x-model.number="form.custom_points" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+            </div>
+          </div>
+
+          <!-- Distance input for Run, Row, Cycling, Ebike -->
+          <div x-show="['run', 'row', 'cycling', 'ebike'].includes(form.type)">
+            <label class="block text-xs text-slate-400 mb-1">
+              Distance (KM) 
+              <span x-show="['run', 'row'].includes(form.type)" class="text-amber-500/80 text-[10px] lowercase">(Rounds down to nearest 1km)</span>
+              <span x-show="form.type === 'cycling'" class="text-amber-500/80 text-[10px] lowercase">(Rounds down to nearest 5km block)</span>
+            </label>
             <input type="number" step="0.01" x-model.number="form.distance" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
           </div>
 
-          <div x-show="['run_row', 'cycling'].includes(form.type)">
-            <label class="block text-xs text-slate-400 mb-1">Elevation Gain (Meters) <span class="text-amber-500/80 text-[10px] lowercase">(Rounds down to nearest 100m)</span></label>
-            <input type="number" step="10" x-model.number="form.elevation" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          <!-- Swimming Meters input -->
+          <div x-show="form.type === 'swim'">
+            <label class="block text-xs text-slate-400 mb-1">
+              Swim Distance (Meters)
+              <span class="text-amber-500/80 text-[10px] lowercase">(Rounds down to nearest 250m block)</span>
+            </label>
+            <input type="number" step="1" x-model.number="form.swim_meters" placeholder="e.g. 750" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
           </div>
 
+          <!-- Elevation for Run, Cycling, Ascent -->
+          <div x-show="['run', 'cycling', 'ascent'].includes(form.type)">
+            <label class="block text-xs text-slate-400 mb-1">Elevation Gain (Meters) <span class="text-amber-500/80 text-[10px] lowercase">(Rounds down to nearest 100m)</span></label>
+            <input type="number" step="1" x-model.number="form.elevation" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+          </div>
+
+          <!-- Stepper Floors -->
           <div x-show="form.type === 'stepper'">
             <label class="block text-xs text-slate-400 mb-1">Floors</label>
             <input type="number" x-model.number="form.floors" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
           </div>
 
+          <!-- Duration -->
           <div x-show="['time_standard', 'sports', 'yoga', 'sauna'].includes(form.type)">
             <label class="block text-xs text-slate-400 mb-1">Duration (Minutes)</label>
             <input type="number" step="1" x-model.number="form.minutes" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
           </div>
 
-          <div x-show="form.type === 'climbing'" class="grid grid-cols-2 gap-2">
+          <!-- Climbing Routes difficulty split -->
+          <div x-show="form.type === 'climbing_routes'" class="grid grid-cols-3 gap-2">
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Hard Routes Hit</label>
-              <input type="number" x-model.number="form.climb_routes" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+              <label class="block text-xs text-slate-400 mb-1">Easy (1pt)</label>
+              <input type="number" x-model.number="form.climb_easy" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
             </div>
             <div>
-              <label class="block text-xs text-slate-400 mb-1">Hangboard (Mins)</label>
-              <input type="number" x-model.number="form.climb_hangboard" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+              <label class="block text-xs text-slate-400 mb-1">Hard (2pt)</label>
+              <input type="number" x-model.number="form.climb_hard" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Limit (2.5pt)</label>
+              <input type="number" x-model.number="form.climb_limit" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
             </div>
           </div>
 
+          <!-- Hangboard split with multipliers -->
+          <div x-show="form.type === 'hangboard'" class="space-y-3">
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Total Hangtime (Minutes) <span class="text-amber-500/80 text-[10px] lowercase">(Rounds down to nearest 3m)</span></label>
+              <input type="number" step="1" x-model.number="form.hangboard_minutes" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-400 mb-1">Weight Modification</label>
+              <select x-model="form.hangboard_modifier" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200">
+                <option value="bodyweight">Bodyweight (x1.0)</option>
+                <option value="removed">Weight Removed (x0.7)</option>
+                <option value="added">Weight Added (x1.3)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Perceived Effort Multiplier -->
+          <div x-show="form.type !== 'bonus'">
+            <label class="block text-xs font-bold text-amber-400/90 uppercase mb-1">Perceived Effort Multiplier</label>
+            <select x-model="form.effort_multiplier" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-slate-200 text-sm focus:border-amber-400">
+              <option value="1.0">Standard Effort (x1.00)</option>
+              <option value="1.05">Hard Effort (x1.05)</option>
+              <option value="1.10">Very Hard Effort (x1.10)</option>
+              <option value="1.15">Extreme Effort (x1.15)</option>
+              <option value="1.20">🔥 PB Effort (x1.20)</option>
+            </select>
+          </div>
+
           <div>
-            <label class="block text-xs text-slate-400 mb-1">Workout Notes (e.g., 'Squash match vs Pete')</label>
+            <label class="block text-xs text-slate-400 mb-1">Workout Notes (e.g., 'Match vs Pete')</label>
             <input type="text" x-model="form.notes" placeholder="Optional details..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white text-sm">
           </div>
 
@@ -152,9 +196,31 @@
         <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition shadow-lg shadow-emerald-900/20">
           🚀 Submit Workout
         </button>
+
+        <!-- Session Multi-Activity WhatsApp Block -->
+        <div x-show="sessionActivities.length > 0" 
+             x-transition:enter="transition ease-out duration-300"
+             class="bg-emerald-950/80 border border-emerald-500/40 rounded-xl p-3 mt-4 space-y-3">
+          <div class="flex justify-between items-center">
+            <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wide">📦 Ready to Share Session (<span x-text="sessionActivities.length"></span> logged)</h4>
+            <button type="button" @click="clearSession()" class="text-[10px] text-slate-400 hover:text-red-400 font-bold underline">Clear List</button>
+          </div>
+          <div class="bg-slate-900/60 p-2.5 rounded-lg text-xs space-y-1 font-mono text-slate-300 max-h-24 overflow-y-auto">
+            <template x-for="act in sessionActivities">
+              <div class="truncate">🔹 <span class="text-slate-100 font-bold" x-text="act.athlete"></span>: +<span x-text="act.pts.toFixed(1)"></span> (<span x-text="act.label"></span>)</div>
+            </template>
+          </div>
+          <a :href="'https://api.whatsapp.com/send?text=' + generateMultiShareText()" 
+             target="_blank"
+             @click="setTimeout(() => clearSession(), 1000)"
+             class="inline-flex w-full items-center justify-center bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-xl text-sm transition shadow-lg space-x-2">
+            <span>💬 Share Session to WhatsApp</span>
+          </a>
+        </div>
       </form>
     </section>
 
+    <!-- Roster Management -->
     <section class="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700" x-data="{ open: false }">
       <button @click="open = !open" class="text-xs text-slate-400 font-bold uppercase flex items-center space-x-1">
         <span>⚙️ Manage Roster / Add Names</span>
@@ -165,19 +231,72 @@
       </div>
     </section>
 
+    <!-- Recent Activity Feed with Inline Delete -->
     <section class="bg-slate-800 rounded-2xl p-4 shadow-xl border border-slate-700">
       <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3">⏱️ Recent Activity Feed</h2>
       <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
         <template x-for="log in history" :key="log.id">
-          <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/60 text-sm">
-            <div class="flex justify-between items-start mb-1">
-              <span class="font-bold text-slate-200" x-text="log.athlete"></span>
-              <span class="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full" x-text="'+' + Number(log.points).toFixed(1)"></span>
+          <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/60 text-sm flex justify-between items-start space-x-2">
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start mb-1">
+                <span class="font-bold text-slate-200 truncate" x-text="log.athlete"></span>
+                <span class="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-full whitespace-nowrap" x-text="'+' + Number(log.points).toFixed(1)"></span>
+              </div>
+              <p class="text-slate-400 text-xs">
+                <span class="text-slate-300 font-semibold" x-text="formatActivityLabel(log.activity_type)"></span>: 
+                <span x-text="log.details"></span>
+              </p>
             </div>
-            <p class="text-slate-400 text-xs">
-              <span class="text-slate-300 font-semibold" x-text="formatActivityLabel(log.activity_type)"></span>: 
-              <span x-text="log.details"></span>
-            </p>
+            
+            <!-- Inline Target Delete Mechanism -->
+            <div x-data="{ confirming: false }" class="flex flex-col items-end justify-center self-center pl-1">
+              <button x-show="!confirming" @click="confirming = true" type="button" class="text-xs text-slate-500 hover:text-red-400 p-1 font-medium transition">
+                🗑️
+              </button>
+              <div x-show="confirming" class="flex flex-col items-center bg-slate-800 border border-red-500/30 rounded-lg p-1.5 space-y-1 shadow-lg z-10">
+                <span class="text-[9px] text-red-400 font-bold whitespace-nowrap px-1">Are you sure?</span>
+                <div class="flex space-x-1.5">
+                  <button type="button" @click="deleteWorkout(log.id)" class="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] px-2 py-0.5 rounded">Yes</button>
+                  <button type="button" @click="confirming = false" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-[10px] px-1.5 py-0.5 rounded">No</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- Last Month's Historical Totals -->
+    <section class="bg-slate-800 border border-slate-700/80 rounded-2xl p-4 shadow-xl">
+      <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3" x-text="'📅 ' + lastMonthLabel + ' Historical Totals'"></h2>
+      <div class="grid grid-cols-2 gap-2">
+        <template x-for="item in lastMonthLeaderboard" :key="item.name">
+          <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-2.5 flex justify-between items-center">
+            <span class="text-xs font-medium text-slate-300 truncate pr-1" x-text="item.name"></span>
+            <span class="font-mono text-sm font-bold text-slate-400" x-text="item.total.toFixed(1) + ' pts'"></span>
+          </div>
+        </template>
+      </div>
+    </section>
+
+    <!-- Ultimate Leaderboard Running Totals -->
+    <section class="bg-gradient-to-br from-slate-800 to-indigo-950 border border-indigo-500/20 rounded-2xl p-4 shadow-2xl">
+      <div class="flex items-center space-x-1.5 mb-3">
+        <span class="text-base">🌌</span>
+        <h2 class="text-sm font-black tracking-wider text-indigo-300 uppercase">Ultimate Running Leaderboard</h2>
+      </div>
+      <div class="space-y-2">
+        <template x-for="(score, index) in ultimateLeaderboard" :key="score.name">
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/40 border border-indigo-500/10">
+            <div class="flex items-center space-x-2.5">
+              <span class="font-mono text-xs font-black text-indigo-400 w-4 text-center" x-text="'#' + (index + 1)"></span>
+              <span class="font-bold text-slate-200 text-sm" x-text="score.name"></span>
+            </div>
+            <div class="text-right">
+              <span class="font-mono font-black text-indigo-300 text-base" x-text="score.total.toFixed(1)"></span>
+              <span class="text-[10px] text-indigo-400/80 uppercase tracking-tighter">all-time pts</span>
+            </div>
           </div>
         </template>
       </div>
@@ -199,27 +318,52 @@
         athletes: ['Butters', 'JK', 'Marcus', 'Pete'],
         newAthleteName: '',
         leaderboard: [],
+        lastMonthLeaderboard: [],
+        ultimateLeaderboard: [],
         history: [],
-        showShareBanner: false,
-        shareText: '',
+        sessionActivities: [], 
+        currentMonthLabel: '',
+        lastMonthLabel: '',
         form: {
-          athlete: 'Butters',
-          type: 'run_row',
+          athlete: '', 
+          type: 'run',
+          custom_name: '',
+          custom_points: 0,
           distance: 0,
+          swim_meters: 0,
           elevation: 0,
           floors: 0,
           minutes: 0,
-          climb_routes: 0,
-          climb_hangboard: 0,
+          climb_easy: 0,
+          climb_hard: 0,
+          climb_limit: 0,
+          hangboard_minutes: 0,
+          hangboard_modifier: 'bodyweight',
+          effort_multiplier: '1.0',
           notes: ''
         },
 
         init() {
+          this.setCalendarLabels();
           if (!supabaseClient) {
             this.rebuildLeaderboard();
             return;
           }
           this.fetchData();
+        },
+
+        setCalendarLabels() {
+          const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+          const now = new Date();
+          this.currentMonthLabel = months[now.getMonth()] + " " + now.getFullYear();
+          
+          let lastMonthIdx = now.getMonth() - 1;
+          let lastMonthYear = now.getFullYear();
+          if (lastMonthIdx < 0) {
+            lastMonthIdx = 11;
+            lastMonthYear -= 1;
+          }
+          this.lastMonthLabel = months[lastMonthIdx] + " " + lastMonthYear;
         },
 
         addNewAthlete() {
@@ -232,13 +376,24 @@
         },
 
         resetInputs() {
+          this.form.custom_name = '';
+          this.form.custom_points = 0;
           this.form.distance = 0;
+          this.form.swim_meters = 0;
           this.form.elevation = 0;
           this.form.floors = 0;
           this.form.minutes = 0;
-          this.form.climb_routes = 0;
-          this.form.climb_hangboard = 0;
+          this.form.climb_easy = 0;
+          this.form.climb_hard = 0;
+          this.form.climb_limit = 0;
+          this.form.hangboard_minutes = 0;
+          this.form.hangboard_modifier = 'bodyweight';
+          this.form.effort_multiplier = '1.0';
           this.form.notes = '';
+        },
+
+        clearSession() {
+          this.sessionActivities = [];
         },
 
         async fetchData() {
@@ -253,7 +408,7 @@
 
             this.history = logs || [];
             this.history.forEach(log => {
-              if (!this.athletes.includes(log.athlete)) {
+              if (log.athlete && !this.athletes.includes(log.athlete)) {
                 this.athletes.push(log.athlete);
               }
             });
@@ -264,47 +419,120 @@
           }
         },
 
+        async deleteWorkout(id) {
+          if (!supabaseClient) return;
+          try {
+            const { error } = await supabaseClient
+              .from('workouts')
+              .delete()
+              .eq('id', id);
+
+            if (error) {
+              alert("Could not delete workout: " + error.message);
+            } else {
+              await this.fetchData();
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        },
+
         rebuildLeaderboard() {
-          let totals = {};
-          this.athletes.forEach(a => totals[a] = 0);
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth();
+
+          let lastMonthIdx = currentMonth - 1;
+          let lastMonthYear = currentYear;
+          if (lastMonthIdx < 0) {
+            lastMonthIdx = 11;
+            lastMonthYear -= 1;
+          }
+
+          let activeMonthTotals = {};
+          let historicalMonthTotals = {};
+          let allTimeTotals = {};
+
+          this.athletes.forEach(a => {
+            activeMonthTotals[a] = 0;
+            historicalMonthTotals[a] = 0;
+            allTimeTotals[a] = 0;
+          });
           
           this.history.forEach(log => {
-            if (totals[log.athlete] !== undefined) {
-              totals[log.athlete] += parseFloat(log.points);
+            if (!log.athlete) return;
+            const logDate = new Date(log.created_at || new Date());
+            const logYear = logDate.getFullYear();
+            const logMonth = logDate.getMonth();
+            const pointsVal = parseFloat(log.points) || 0;
+
+            if (allTimeTotals[log.athlete] !== undefined) {
+              allTimeTotals[log.athlete] += pointsVal;
             } else {
-              totals[log.athlete] = parseFloat(log.points);
+              allTimeTotals[log.athlete] = pointsVal;
+            }
+
+            if (logYear === currentYear && logMonth === currentMonth) {
+              if (activeMonthTotals[log.athlete] !== undefined) {
+                activeMonthTotals[log.athlete] += pointsVal;
+              } else {
+                activeMonthTotals[log.athlete] = pointsVal;
+              }
+            }
+
+            if (logYear === lastMonthYear && logMonth === lastMonthIdx) {
+              if (historicalMonthTotals[log.athlete] !== undefined) {
+                historicalMonthTotals[log.athlete] += pointsVal;
+              } else {
+                historicalMonthTotals[log.athlete] = pointsVal;
+              }
             }
           });
 
-          this.leaderboard = Object.keys(totals).map(name => ({
+          this.leaderboard = Object.keys(activeMonthTotals).map(name => ({
             name: name,
-            total: totals[name]
+            total: activeMonthTotals[name]
           })).sort((a, b) => b.total - a.total);
-          
-          if(this.athletes.length > 0 && !this.athletes.includes(this.form.athlete)) {
-            this.form.athlete = this.athletes[0];
-          }
+
+          this.lastMonthLeaderboard = Object.keys(historicalMonthTotals).map(name => ({
+            name: name,
+            total: historicalMonthTotals[name]
+          })).sort((a, b) => b.total - a.total);
+
+          this.ultimateLeaderboard = Object.keys(allTimeTotals).map(name => ({
+            name: name,
+            total: allTimeTotals[name]
+          })).sort((a, b) => b.total - a.total);
         },
 
         calculateLivePoints() {
           let pts = 0;
-          const internalDistance = Math.floor(this.form.distance || 0);
+          const roundedDistance1km = Math.floor(this.form.distance || 0);
+          const roundedDistance5km = Math.floor((this.form.distance || 0) / 5) * 5;
+          const roundedSwimBlocks = Math.floor((this.form.swim_meters || 0) / 250);
           const internalElevationPoints = Math.floor((this.form.elevation || 0) / 100) * 1.0;
 
           switch(this.form.type) {
-            case 'run_row':
-              pts += internalDistance * 1.5;
+            case 'custom':
+              pts += parseFloat(this.form.custom_points || 0);
+              break;
+            case 'ascent':
+              pts += internalElevationPoints;
+              break;
+            case 'run':
+            case 'row':
+              pts += roundedDistance1km * 1.5;
               pts += internalElevationPoints;
               break;
             case 'swim':
-              pts += internalDistance * 5.0;
+              pts += roundedSwimBlocks * 2.0;
               break;
             case 'cycling':
-              pts += (internalDistance / 5) * 1.5;
+              pts += (roundedDistance5km / 5) * 1.5;
               pts += internalElevationPoints;
               break;
             case 'ebike':
-              pts += (internalDistance / 5) * 1.0;
+              pts += (roundedDistance5km / 5) * 1.0;
               break;
             case 'stepper':
               pts += ((this.form.floors || 0) / 20) * 1.5;
@@ -317,43 +545,105 @@
             case 'sauna':
               pts += Math.floor((this.form.minutes || 0) / 10) * 1.0;
               break;
-            case 'climbing':
-              pts += (this.form.climb_routes || 0) * 1.0;
-              pts += Math.floor((this.form.climb_hangboard || 0) / 5) * 0.5;
+            case 'climbing_routes':
+              pts += (this.form.climb_easy || 0) * 1.0;
+              pts += (this.form.climb_hard || 0) * 2.0;
+              pts += (this.form.climb_limit || 0) * 2.5;
+              break;
+            case 'hangboard':
+              const baseHangPoints = Math.floor((this.form.hangboard_minutes || 0) / 3) * 1.0;
+              let modifier = 1.0;
+              if (this.form.hangboard_modifier === 'removed') modifier = 0.7;
+              if (this.form.hangboard_modifier === 'added') modifier = 1.3;
+              pts += baseHangPoints * modifier;
               break;
             case 'bonus':
               pts += 40;
               break;
           }
+
+          if (this.form.type !== 'bonus') {
+            const effortMult = parseFloat(this.form.effort_multiplier || '1.0');
+            pts = pts * effortMult;
+          }
+
           return pts;
         },
 
-        buildDetailsString(calculatedPoints) {
+        buildDetailsString() {
           let parts = [];
-          const internalDistance = Math.floor(this.form.distance || 0);
+          const roundedDistance1km = Math.floor(this.form.distance || 0);
+          const roundedDistance5km = Math.floor((this.form.distance || 0) / 5) * 5;
+          const roundedSwimMeters = Math.floor((this.form.swim_meters || 0) / 250) * 250;
           const internalElevation = Math.floor((this.form.elevation || 0) / 100) * 100;
 
-          if (this.form.distance) parts.push(`${internalDistance}km`);
+          if (this.form.type === 'custom') {
+            parts.push(`Manually awarded`);
+          }
+          if (['run', 'row'].includes(this.form.type) && this.form.distance) {
+            parts.push(`${roundedDistance1km}km`);
+          }
+          if (this.form.type === 'swim' && this.form.swim_meters) {
+            parts.push(`${roundedSwimMeters}m`);
+          }
+          if (['cycling', 'ebike'].includes(this.form.type) && this.form.distance) {
+            parts.push(`${roundedDistance5km}km`);
+          }
           if (this.form.elevation) parts.push(`${internalElevation}m elevation`);
           if (this.form.floors) parts.push(`${this.form.floors} floors`);
           if (this.form.minutes) parts.push(`${this.form.minutes} mins`);
-          if (this.form.climb_routes) parts.push(`${this.form.climb_routes} routes`);
-          if (this.form.climb_hangboard) parts.push(`${this.form.climb_hangboard} mins hangboard`);
+          
+          if (this.form.type === 'climbing_routes') {
+            if (this.form.climb_easy) parts.push(`${this.form.climb_easy} Easy`);
+            if (this.form.climb_hard) parts.push(`${this.form.climb_hard} Hard`);
+            if (this.form.climb_limit) parts.push(`${this.form.climb_limit} Limit`);
+          }
+
+          if (this.form.type === 'hangboard') {
+            const calculatedHangMins = Math.floor((this.form.hangboard_minutes || 0) / 3) * 3;
+            let modLabel = 'Bodyweight';
+            if (this.form.hangboard_modifier === 'removed') modLabel = 'Weight Removed (x0.7)';
+            if (this.form.hangboard_modifier === 'added') modLabel = 'Weight Added (x1.3)';
+            parts.push(`${calculatedHangMins} mins hangtime • Load: ${modLabel}`);
+          }
+
+          if (this.form.type !== 'bonus' && parseFloat(this.form.effort_multiplier) > 1.0) {
+            const multLabels = {
+              '1.05': 'Hard Effort (x1.05)',
+              '1.10': 'Very Hard Effort (x1.10)',
+              '1.15': 'Extreme Effort (x1.15)',
+              '1.20': '🔥 PB Effort (x1.20)'
+            };
+            parts.push(`Effort: ${multLabels[this.form.effort_multiplier] || 'x' + this.form.effort_multiplier}`);
+          }
+
           if (this.form.notes) parts.push(`(${this.form.notes})`);
           
           return parts.length ? parts.join(' • ') : 'Logged via dashboard';
         },
 
         async submitWorkout() {
+          if (!this.form.athlete) {
+            alert("⚠️ Stop! Please select your name from the dropdown box before submitting.");
+            return;
+          }
+
           const finalPoints = this.calculateLivePoints();
           if (finalPoints <= 0) {
             alert("Workout points must be greater than 0!");
             return;
           }
 
-          const detailsStr = this.buildDetailsString(finalPoints);
+          const detailsStr = this.buildDetailsString();
           const currentAthlete = this.form.athlete;
-          const currentTypeLabel = this.formatActivityLabel(this.form.type);
+          
+          const currentTypeLabel = this.form.type === 'custom' 
+            ? `✨ ${this.form.custom_name.trim() || 'Custom Activity'}` 
+            : this.formatActivityLabel(this.form.type);
+            
+          const databaseTypeSaved = this.form.type === 'custom'
+            ? (this.form.custom_name.trim() || 'Custom Activity')
+            : this.form.type;
 
           if (!supabaseClient) return;
 
@@ -362,7 +652,7 @@
             .insert([
               { 
                 athlete: currentAthlete, 
-                activity_type: this.form.type, 
+                activity_type: databaseTypeSaved, 
                 points: finalPoints,
                 details: detailsStr
               }
@@ -371,22 +661,44 @@
           if (error) {
             alert("Error saving: " + error.message);
           } else {
+            this.sessionActivities.push({
+              athlete: currentAthlete,
+              label: currentTypeLabel,
+              details: detailsStr,
+              pts: finalPoints
+            });
+
+            const savedAthleteName = this.form.athlete;
             this.resetInputs();
+            this.form.athlete = savedAthleteName;
+
             await this.fetchData();
-
-            const updatedAthleteData = this.leaderboard.find(a => a.name === currentAthlete);
-            const newTotalScore = updatedAthleteData ? updatedAthleteData.total.toFixed(1) : finalPoints.toFixed(1);
-
-            const rawMessage = `🏋️‍♂️ *OMFC Leaderboard Update!*\n\n*${currentAthlete}* just logged a workout:\n💪 ${currentTypeLabel}\n📊 Details: ${detailsStr}\n🔥 Points Earned: +${finalPoints.toFixed(1)}\n\n🏆 *New Total Standing:* ${newTotalScore} pts!`;
-            
-            this.shareText = encodeURIComponent(rawMessage);
-            this.showShareBanner = true;
           }
+        },
+
+        generateMultiShareText() {
+          if (this.sessionActivities.length === 0) return "";
+          
+          let activitiesText = "";
+          this.sessionActivities.forEach(act => {
+            activitiesText += `• *${act.athlete}*: ${act.label} (+${act.pts.toFixed(1)} pts)\n  ↳ _${act.details}_\n\n`;
+          });
+
+          let leaderboardText = "";
+          this.leaderboard.forEach((score, index) => {
+            let medal = index === 0 ? "🥇 " : index === 1 ? "🥈 " : index === 2 ? "🥉 " : "🔹 ";
+            leaderboardText += `${medal}${index + 1}. ${score.name}: ${score.total.toFixed(1)} pts\n`;
+          });
+
+          const rawMessage = `🏋️‍♂️ *OMFC Workout Session Logged!*\n\n${activitiesText}🏆 *${this.currentMonthLabel.toUpperCase()} STANDINGS:*\n${leaderboardText}`;
+          return encodeURIComponent(rawMessage);
         },
 
         formatActivityLabel(type) {
           const dict = {
-            'run_row': '🏃‍♂️ Run / Row',
+            'run': '🏃‍♂️ Running',
+            'row': '🚣‍♀️ Rowing',
+            'ascent': '🧗‍♂️ Ascent',
             'swim': '🏊‍♂️ Swim',
             'cycling': '🚴‍♂️ Cycling',
             'ebike': '⚡ E-Bike',
@@ -395,7 +707,8 @@
             'sports': '🎾 Approved Sports',
             'yoga': '🧘 Yoga/Stretch',
             'sauna': '🥵 Sauna Session',
-            'climbing': '🧗 Climbing',
+            'climbing_routes': '🧗 Climbing (Routes)',
+            'hangboard': '🛹 Hangboard Training',
             'bonus': '⭐ Monthly Objective Bonus',
             'Historical Carryover': '🚀 Start Balance'
           };
